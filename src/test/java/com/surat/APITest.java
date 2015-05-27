@@ -17,6 +17,7 @@ import static com.jayway.restassured.module.jsv.JsonSchemaValidator.*;
 public class APITest {
 	public APITest(){
 		//Server variables
+		//baseURI ="http://api.openweathermap.org/data/2.5/weather?q=london";
 		baseURI ="https://api.github.com/users/mralexgray/repos";
 		//port=8080;
 		//authentication = basic("username", "password");
@@ -28,8 +29,13 @@ public class APITest {
 		//Add these 3 jar files from rest-assured website if you don't want to use maven. This project uses maven
 		//1. rest-assured-2.4.1-dist  2. json-path-2.4.1-dist  3. json-schema-validator-2.4.1-dist   
 
+		//get the schema generated at http://jsonschema.net/#/   
+		//Also, if you want to compare the schema for the whole array, give just one object from the array and then click "Single schema (list validation)". 
+		//If an item takes more than one value (example, either null or string) edit the schema as "type": ["string","null"] 
+		get().then().body(matchesJsonSchemaInClasspath("json-schema.json"));
+
 		//Logging the response
-		get().then().log().headers(); //Takes cookies/body/All.
+		get().then().log().all(); //Takes cookies/body/All.
 
 		//Assertion comparisons
 		get().then().body("id", hasItem(16160992)); //Will throw an exception if condition not met, no output if its met.
@@ -53,6 +59,7 @@ public class APITest {
 
 		//Asserts count of the elements
 		expect().body("owner.login.size()",equalTo(30)).when().get();
+		
 	}
 
 }
