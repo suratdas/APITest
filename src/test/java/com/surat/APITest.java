@@ -1,111 +1,159 @@
 package com.surat;
 
-import java.util.List;
-
-import groovy.time.BaseDuration.From;
-
-import org.junit.Test;
-
+import com.jayway.restassured.builder.RequestSpecBuilder;
 import com.jayway.restassured.path.json.JsonPath;
+import com.jayway.restassured.response.Header;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.response.ResponseBody;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.*;
 
 import static com.jayway.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static com.jayway.restassured.module.jsv.JsonSchemaValidator.*;
+import static com.jayway.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 
 public class APITest {
-	public APITest(){
+
+	private Response response;
+	private String endpoint;
+	private Map<String, String> headersMap = new HashMap<String, String>();
+	private String xml;
+
+	public APITest() {
 		//Server variables
 		//baseURI ="http://api.openweathermap.org/data/2.5/weather?q=london";
-		baseURI ="https://api.github.com/users/<username>/repos";
+		baseURI = "https://api.github.com/users/suratdas/repos";
 		//port=8080;
 		//authentication = basic("username", "password");
 	}
 
+
 	@Test
-	public void JunitTest() {
+	public void TestCase1() {
+		SetEndpoint("https://api.github.com/users/suratdas/repos");
+		SetHeaders("Accept:application/json");
+		Assert.assertEquals(200, GETRequestStatusCode());
+		Assert.assertEquals(5, GetNodeArray("id").size());
+	}
+
+	@Test
+	public void TestCase2() {
 
 		//Add these 3 jar files from rest-assured website if you don't want to use maven. This project uses maven
-		//1. rest-assured-2.4.1-dist  2. json-path-2.4.1-dist  3. json-schema-validator-2.4.1-dist   
+		//1. rest-assured-2.4.1-dist  2. json-path-2.4.1-dist  3. json-schema-validator-2.4.1-dist
 
-		//get the schema generated at http://jsonschema.net/#/   
-		//Also, if you want to compare the schema for the whole array, give just one object from the array and then click "Single schema (list validation)". 
-		//If an item takes more than one value (example, either null or string) edit the schema as "type": ["string","null"] 
+		//get the schema generated at http://jsonschema.net/#/
+		//Also, if you want to compare the schema for the whole array, give just one object from the array and then click "Single schema (list validation)".
+		//If an item takes more than one value (example, either null or string) edit the schema as "type": ["string","null"]
 		get().then().body(matchesJsonSchemaInClasspath("json-schema.json"));
 
 		//Logging the response
 		get().then().log().all(); //Takes cookies/body/All.
 
 		//Assertion comparisons
-		get().then().body("id", hasItem(16160992)); //Will throw an exception if condition not met, no output if its met.
-		get().then().body("owner.login", hasItem("<username>")); //Will throw an exception if condition not met, no output if its met.
+		get().then().body("id", hasItem(25268033)); //Will throw an exception if condition not met, no output if its met.
+		get().then().body("owner.login", hasItem("suratdas")); //Will throw an exception if condition not met, no output if its met.
 
 		//Extracting particular data
-		System.out.println(get().path("owner.login"));
+		System.out.println(get().path("owner.login").toString());
 		Response response = get();
 		ResponseBody<?> responsebody = response.body();
-		System.out.println("Status code:"+response.getStatusCode() + " Status line: "+response.statusLine());
-		System.out.println(responsebody.path("id"));		
-		System.out.println(responsebody.path("owner.login.size()"));
+		System.out.println("Status code:" + response.getStatusCode() + " Status line: " + response.statusLine());
+		System.out.println(responsebody.path("id").toString());
+		System.out.println(responsebody.path("owner.login.size()").toString());
 
 		//Extracting response another way
 		JsonPath jsonPath = new JsonPath(get().asString());
 		List<Integer> winnerIds = jsonPath.get("id");
-		for(Integer temp : winnerIds){
+		for (Integer temp : winnerIds) {
 			System.out.println(temp);
 		}
 		//*/
 
 		//Asserts count of the elements
-		expect().body("owner.login.size()",equalTo(30)).when().get();
-		
+		expect().body("owner.login.size()", equalTo(5)).when().get();
+
 	}
-	
-	public void RegularMethod() {
-		//Define base url for the endpoint
-	        baseURI ="https://api.github.com/users/<username>/";
-	        //Get the response and put it in variables
-	        Response response = get("repos");
-	        ResponseBody responsebody = response.body();
-	        //Get the status code
-	        System.out.println("Status code:"+response.getStatusCode() + " Status line: "+response.statusLine()); //Prings => Status code:200 Status line: HTTP/1.1 200 OK
-	        //Get the response headers
-	        System.out.println("Headers:");
-	        List<Header> headers = response.getHeaders().asList();
-	        for(Header temp : headers) {
-	            System.out.println("\t"+temp.getName() +":"+temp.getValue());
-	        }
-	        //Get the response cookies
-	        Response response1 = get("http://google.com");
-	        System.out.println("Cookie size : "+ response1.cookies().size());
-	        Map<String,String> cookies = response1.getCookies();
-	        Set<String> keys = cookies.keySet();
-	        for(String key:keys){
-	            System.out.println("\t"+key +"=>"+ cookies.get(key));
-	        }
-	        //Process body content : display whole body, array of nodes/single node or assert if it contains some value etc.
-	        System.out.println("Body:\n\t"+responsebody.asString()); //Prints whle body
-	        System.out.println("Example array from response: "+responsebody.path("id")); //prints array of id in the response
-	        System.out.println("Calculate Size: "+responsebody.path("owner.login.size()")); //prints count of an array in response body
-	        try {
-	            response.then().body("id", hasItem(36698447)); //Will throw an exception if condition not met, no output if its met.
-	            System.out.println("Found the item.");
-	        }
-	        catch(AssertionError e){
-	            //Do whatever you want to do to when assertion fails
-	            System.out.println("Exception seen:");
-	            System.out.print("\t"+e.getMessage());
-	        }
-	        //Extracting response another way using JsonPath
-	        JsonPath jsonPath = new JsonPath(responsebody.asString());
-	        List<Integer> winnerIds = jsonPath.get("id");
-	        System.out.println("Using JsonPath:");
-	        System.out.print("\t");
-	        for(Integer temp : winnerIds){
-	            System.out.print(temp+", ");
-	        }
-	        //*/	
+
+
+	public boolean SetEndpoint(String temp) {
+		endpoint = temp;
+		return true;
+	}
+
+	public boolean SetHeaders(String headersPassed) {
+		xml = "";
+		List<String> headersStringList = Arrays.asList(headersPassed.split("\n"));
+		headersStringList.forEach(header -> {
+			String temp = header;
+			if (header.contains("application/xml")) xml = "xml";
+			headersMap.put(temp.split(":")[0].trim(), temp.replace(temp.split(":")[0] + ":", "").trim());
+            /*headersList.add(header.split(":")[0].trim());
+            headersList.add(header.replace(header.split(":")[0] + ":", "").trim());*/
+		});
+
+		return true;
+	}
+
+	public int GETRequestStatusCode() {
+
+		//Clean up previous response
+		if (response != null) response = delete();
+
+		baseURI = endpoint.trim();
+		RequestSpecBuilder requestSpecBuilder = new RequestSpecBuilder();
+		requestSpecBuilder.addHeaders(headersMap);
+		response = given().spec(requestSpecBuilder.build()).when().get();
+		response.getBody().prettyPrint();
+
+		//Clean up the list for next request
+		//headersList.clear();
+		headersMap.clear();
+
+		return response.getStatusCode();
+	}
+
+	public int GetStatusCode() {
+		return response.getStatusCode();
+	}
+
+
+	public String GetNode(String nodeName) {
+		try {
+			if (xml.contains("xml")) {
+				String returnValue = response.body().xmlPath().get().getNode(nodeName).value();
+				return returnValue;
+			}
+			return response.body().jsonPath().get(nodeName).toString();
+		} catch (Exception e) {
+			return "";
+		}
+	}
+
+	public List<String> GetNodeArray(String nodeName) {
+		try {
+			return response.body().jsonPath().get(nodeName);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	public Map<String, String> GetResponseHeaders() {
+		List<Header> headers = response.getHeaders().asList();
+		Map<String, String> responseHeadersMap = new HashMap<>();
+		headers.forEach(header -> responseHeadersMap.put(header.getName(), header.getValue()));
+		return responseHeadersMap;
+	}
+
+	public Map<String, String> GetResponseCookies() {
+		Map<String, String> cookies = response.getCookies();
+		Set<String> keys = cookies.keySet();
+		Map<String, String> responseCookiesMap = new HashMap<>();
+		keys.forEach(key -> responseCookiesMap.put(key, cookies.get(key)));
+		return responseCookiesMap;
 	}
 
 }
